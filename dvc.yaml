@@ -1,8 +1,63 @@
 stages:
   data_ingestion:
-    cmd: python src/cnnClassifier/pipeline/stage_01_data_ingestion.py
+    cmd: python3 src/ChestCancerClassifier/pipeline/stage_01_data_ingestion.py
     deps:
-      - src/cnnClassifier/pipeline/stage_01_data_ingestion.py
+      - src/ChestCancerClassifier/pipeline/stage_01_data_ingestion.py
       - config/config.yaml
     outs:
-      - artifacts/data_ingestion/Chest-CT-Scan-data
+      - artifacts/data_ingestion/Data
+
+  clean_data:
+    cmd: |
+      rm -rf artifacts/data_ingestion/Data/train/squamous.cell.carcinoma_left.hilum_T1_N2_M0_IIIa artifacts/data_ingestion/Data/train/large.cell.carcinoma_left.hilum_T2_N2_M0_IIIa
+      rm -rf artifacts/data_ingestion/Data/test/large.cell.carcinoma artifacts/data_ingestion/Data/test/squamous.cell.carcinoma
+      touch artifacts/data_ingestion/.cleaned
+    deps:
+      - artifacts/data_ingestion/Data
+    outs:
+      - artifacts/data_ingestion/.cleaned
+
+  prepare_base_model:
+    cmd: python3 src/ChestCancerClassifier/pipeline/stage_02_prepare_base_model.py
+    deps:
+      - src/ChestCancerClassifier/pipeline/stage_02_prepare_base_model.py
+      - config/config.yaml
+    params:
+      - IMAGE_SIZE
+      - INCLUDE_TOP
+      - CLASSES
+      - WEIGHTS
+      - LEARNING_RATE
+    outs:
+      - artifacts/prepare_base_model
+
+  training:
+    cmd: python3 src/ChestCancerClassifier/pipeline/stage_03_model_training.py
+    deps:
+      - src/ChestCancerClassifier/pipeline/stage_03_model_training.py
+      - config/config.yaml
+      - artifacts/data_ingestion/Data/train
+      - artifacts/data_ingestion/.cleaned
+      - artifacts/prepare_base_model
+    params:
+      - IMAGE_SIZE
+      - EPOCHS
+      - BATCH_SIZE
+      - AUGMENTATION
+    outs:
+      - artifacts/training/model.h5
+
+  evaluation:
+    cmd: python3 src/ChestCancerClassifier/pipeline/stage_04_model_evaluation.py
+    deps:
+      - src/ChestCancerClassifier/pipeline/stage_04_model_evaluation.py
+      - config/config.yaml
+      - artifacts/data_ingestion/Data/test
+      - artifacts/data_ingestion/.cleaned
+      - artifacts/training/model.h5
+    params:
+      - IMAGE_SIZE
+      - BATCH_SIZE
+    metrics:
+      - scores.json:
+          cache: false
