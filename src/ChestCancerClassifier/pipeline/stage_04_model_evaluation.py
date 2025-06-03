@@ -1,5 +1,5 @@
 from ChestCancerClassifier.config.configuration import ConfigurationManager
-from ChestCancerClassifier.components.model_evaluation_mlflow import Evaluation
+from ChestCancerClassifier.components.model_evaluation import Evaluation
 from ChestCancerClassifier import logger
 
 
