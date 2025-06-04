@@ -11,6 +11,9 @@ RUN apt update -y && apt install -y \
 WORKDIR /app
 
 COPY . /app
+
+# Ensure pip exists and is up to date
+RUN python3 -m ensurepip --upgrade
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
